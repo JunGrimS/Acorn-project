@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dev">
+
+<!-- 회원 가입 -->
+<insert id="SignUp"> 
+	insert into member(user_id,user_pwd,user_tel,user_email,user_auth,user_name,user_sex,user_birth)
+				values(#{user_id},#{user_pwd},#{user_tel},#{user_email},1,#{user_name},#{user_sex},#{user_birth})
+</insert> 
+
+<!-- 아이디중복체크 -->
+<select id="checkid" resultType="int">
+	select count(*) from member where user_id=#{user_id}
+</select>
+
+<!-- 로그인 -->
+<select id="Login" resultType="formbean">
+	select * from member where user_id=#{user_id} and user_pwd=#{user_pwd}
+</select>
+
+
+<!-- 회원정보수정 -->
+<update id="MemberUpdate">
+	update member set user_pwd=#{user_pwd}, user_tel=#{user_tel}, user_email=#{user_email}, user_name=#{user_name}, user_sex=#{user_sex},user_birth=#{user_birth} where user_id=#{user_id}
+</update>
+
+<!-- 회원탈퇴 -->
+<delete id="MemberDelete">
+	delete from member where user_id=#{user_id} and user_pwd=#{user_pwd}
+</delete>
+
+<!-- 비밀번호변경 -->
+<update id="Updatepwd" parameterType="formbean">
+	update member set user_pwd=#{user_pwd} where user_email=#{user_email}
+</update>
+
+<!-- 비밀번호찾기 -->
+<select id="Findpwd" parameterType="String" resultType="formbean">
+	select * from member where user_email=#{user_email}
+</select>
+
+<!-- 리스트페이징 -->
+<!-- Location 검색 -->
+<select id="ListLocPaging" resultType="loc_dto">
+
+	<![CDATA[
+	select loc_id,loc_name,loc_region,loc_addr from (
+	
+		select /*+INDEX_DESC(destination pk_destination)*/ rownum as rn , loc_id,loc_name,loc_region,loc_addr
+		
+		from destination where rownum<=#{pageNum}*#{amount}
+		
+	]]>
+	
+		<if test="keyword != null">
+		and loc_addr like '%'||#{keyword}||'%'
+		</if>
+    
+	<![CDATA[               
+        )
+            
+		where rn > (#{pageNum} -1) * #{amount}
+	]]>
+</select>
+
+<select id="SearchLocTotal" resultType="int">
+	select count(*) from destination
+	
+	<if test="keyword !=null">
+		where loc_addr like '%'||#{keyword}||'%'
+	</if>
+</select>
+
+ <!-- 나의 여행 전체 리스트 -->
+ <select id="myTripList" parameterType="string" resultType="mtdto">
+  	SELECT * FROM travel_info WHERE user_id=#{user_id} ORDER BY ti_num DESC
+ </select>
+
+ <!-- 나의 여행 상세 -->
+ <select id="selectOneMyTrip" parameterType="string" resultType="mtdto">
+ 	SELECT * FROM travel_info WHERE ti_id=#{ti_id}
+ </select>
+
+  <!-- 나의 여행 최근 글번호 maxnum -->
+ <select id="currentMaxnum" resultType="integer">
+ 	SELECT MAX(ti_num) FROM travel_info
+ </select>
+ 
+ <!-- 나의 여행 추가 -->
+ <insert id="insertMyTripData" parameterType="mtbean">
+ 	INSERT INTO travel_info VALUES(#{ti_id},#{ti_num},#{user_id},#{ti_trip_name},#{ti_visit_date },SYSDATE)
+ </insert>
+ 
+ <!-- 나의 여행 수정 -->
+ <update id="updateMyTripData" parameterType="mtbean">
+ 	UPDATE travel_info SET ti_trip_name=#{ti_trip_name},ti_visit_date=#{ti_visit_date } WHERE ti_id=#{ti_id}
+ </update>
+ 
+ <!-- 나의 여행 삭제 -->
+ <delete id="deleteMyTripData" parameterType="string">
+ 	DELETE FROM travel_info WHERE ti_id=#{ti_id}
+ </delete>
+
+ <!-- 나의 여행 여행지 전체 리스트 -->
+ <select id="myTripDetailList" resultType="mtddto">
+  	SELECT * FROM travel_info_detail ORDER BY ti_id ASC
+ </select>
+ 
+ <!-- 나의 여행 상세정보 조회 -->
+ <insert id="selectDetailDataOne" parameterType="mtddto">
+ 	SELECT * FROM travel_info_detail WHERE loc_id=#{loc_id}
+ </insert>
+ 
+ <!-- 여행지 리스트 조회 -->
+ <select id="tripSpotSelectList" resultType="mtddto" parameterType="string">
+ 	SELECT * FROM destination 
+ 	INNER JOIN destination_detail ON destination.loc_id = destination_detail.loc_id 
+ 	INNER JOIN travel_info_detail ON destination_detail.loc_id = travel_info_detail.loc_id 
+ 	WHERE ti_id = #{ti_id}
+ </select>
+ 
+ <!-- 나의 여행 상세정보 추가 -->
+ <insert id="insertDetailData" parameterType="mtdbean">
+ 	INSERT INTO travel_info_detail VALUES(#{ti_id},#{loc_id},#{ti_content},#{ti_pic_url})
+ </insert>
+ 
+ <!-- 나의 여행 상세정보 삭제 -->
+ <delete id="deleteDetailData" parameterType="string">
+ 	DELETE FROM travel_info_detail WHERE ti_id=#{ti_id}
+ </delete>
+ 
+ <!-- 나의 여행  상세정보 수정 -->
+ <update id="updateDetailData" parameterType="mtdbean">
+ 	UPDATE travel_info_detail SET ti_content=#{ti_content},ti_pic_url=#{ti_pic_url } WHERE ti_id=#{ti_id}
+ </update>
+ 
+ <!-- 여행지 삭제 -->
+ <delete id="deleteTripSpot" parameterType="mtdbean">
+ 	DELETE FROM travel_info_detail WHERE ti_id=#{ti_id} AND loc_id=#{loc_id}
+ </delete>
+ 
+ 
+ 
+
+
+
+
+
+<!-- 페이지 개수 세기 -->
+<select id="selectTotal" resultType="Integer" parameterType="Integer">
+	SELECT CEIL(COUNT(1)/10) AS TOTAL_CNT FROM TABLE_BD WHERE TB_CAT = #{TB_CAT}  
+</select>
+
+  
+<!-- 전체리스트1 보기 -->
+<select id="selectList" resultType="boarddto" parameterType="Integer"> 
+	SELECT
+         TA.*
+      FROM(
+         SELECT
+              CEIL(ROWNUM/10) AS PAGE
+            , TOTAL_CNT-ROWNUM+1 AS RNUM
+            , T1.*
+		FROM (
+			SELECT TB_NO
+				, TB_CAT
+				, TB_REGION 
+				, TB_TITLE
+				, TB_ID
+				, TB_DATE
+				, TB_READCNT 
+				, COUNT(1) OVER() TOTAL_CNT
+			FROM TABLE_BD
+			WHERE TB_CAT = #{TB_CAT}
+			<if test="searchV != ''.toString() and searchV != null">
+				<if test="searchN != ''.toString() and searchN != null">
+					and ${searchN} like '%' || #{searchV} || '%'
+				</if>				
+			</if>
+			ORDER BY TB_DATE DESC
+		) T1
+	) TA
+	where TA.PAGE = #{PAGE}  
+</select> 
+
+<!-- 상세보기 -->
+<select id="selectOne" parameterType="int" resultType="boarddto">
+	SELECT t.tb_no
+			, t.tb_readcnt
+			, t.tb_cat
+			, t.tb_region
+			, t.tb_title
+			, t.tb_content
+			, t.tb_id
+			, t.tb_date
+	FROM TABLE_BD T 
+	WHERE T.TB_NO=#{tb_no}
+</select>
+
+<!-- 글쓰기 -->
+<insert id="insertData" parameterType="boardformbean">
+ 	insert into table_bd
+	values(
+		(select max(tb_no)+1 from table_bd)
+		, #{tb_cat}
+		, #{tb_region}
+		, #{tb_title}
+		, #{tb_content}
+		, #{tb_id}
+		, sysdate
+		, 0
+	)
+</insert> 
+
+<!-- 조회수 추가 -->
+<update id="updateReadCnt" parameterType="boardformbean">
+ 	UPDATE TABLE_BD 
+	SET TB_READCNT = (SELECT MAX(TB_READCNT)+1 FROM TABLE_BD WHERE TB_NO = #{TB_NO})
+	WHERE TB_NO = #{TB_NO}
+</update>
+
+
+<!-- 수정 -->
+<update id="updateData" parameterType="boardformbean">
+	update table_bd set
+		tb_cat=#{tb_cat},
+		tb_region=#{tb_region},
+		tb_title=#{tb_title},
+		tb_content=#{tb_content}
+		where tb_no=#{tb_no}
+</update>
+
+<!-- 삭제 -->
+ <delete id="deleteData" parameterType="Integer">
+ 	delete from table_bd where tb_no=#{tb_no}
+ </delete>
+
+
+<!-- 댓글 읽어오기 -->
+<select id="selectReply" parameterType="int" resultType="rdto">
+select * from table_bd2 where tb_no = #{tb_no} ORDER BY gnum desc, onum asc
+</select>
+
+<!-- 댓글 추가 -->
+<insert id="insertReply" parameterType="rfbean">
+insert into table_bd2 
+	values(
+		#{user_id},
+		#{tb_no},
+		#{content},
+		sysdate,
+		#{gnum},
+		#{onum},
+		#{nested}
+		)
+</insert>
+
+<!-- onum 갱신 -->
+ <update id="updateOnum" parameterType="rfbean">
+  update table_bd2 set onum=onum + 1 where onum >= #{onum} and gnum = #{gnum}
+ </update>
+
+<!-- 댓글 수정 -->
+<update id="updateReply" parameterType="rfbean">
+update table_bd2 set content = #{content}
+	where gnum = #{gnum} and onum = #{onum} and nested = #{nested}
+	<if test="auth_code != 3">
+		and user_id = #{user_id}
+	</if>
+</update>
+
+<!-- 댓글 삭제 -->
+<delete id="deleteReply" parameterType="rfbean">
+	delete from table_bd2 
+	where tb_no=#{tb_no} and gnum = #{gnum} and onum = #{onum} and nested = #{nested}
+</delete>
+
+<!-- 답글 리스트 가져오기 -->
+<select id="selectReply2" parameterType="int" resultType="rdto">
+	SELECT *
+	FROM TABLE_BD2
+	WHERE onum = #{onum} and nested = #{nested}
+</select>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Content mapper start -->
+
+<!-- maxId -->
+<select id="loc_maxId" resultType="integer">
+ 	SELECT MAX(loc_id) FROM destination
+</select>
+
+<select id="loc_TotNum" resultType="integer">
+ 	SELECT max(rownum) FROM DESTINATION
+</select>
+
+<!-- 추가 -->
+<insert id="loc_insert" parameterType="loc_bean">
+	insert into destination(loc_id,loc_name,loc_region,loc_city,loc_addr,loc_cat,loc_lat,loc_long)
+		values(#{loc_id},#{loc_name},#{loc_region},#{loc_city},#{loc_addr},#{loc_cat},#{loc_lat},#{loc_long})
+</insert>
+
+<insert id="loc_insertDetail" parameterType="loc_bean">
+	insert into destination_detail(LOC_ID,LOC_TEL,LOC_WORKTIME,LOC_NONWORK,LOC_PARKING,loc_desc)
+		values(#{loc_id},#{loc_tel},#{loc_worktime},#{loc_nonwork},#{loc_parking},#{loc_desc})
+</insert>
+
+<!--  -->
+
+<!-- 선택 --><!-- 이미지는 첫번쨰 이미지만 가져온다 -->
+<select id="loc_selectAll" resultType="loc_dto">
+	SELECT * 
+		FROM (select * from destination 
+		LEFT join destination_detail using(loc_id))des  
+		LEFT JOIN (SELECT LOC_ID, loc_ph_url FROM DESTINATION_PH  
+		WHERE LOC_PH_ID_CNT ='1') USING (LOC_ID)  
+		order by loc_id desc
+</select>
+
+<select id="loc_selectOne" resultType="loc_dto" parameterType="string">
+ 	SELECT * 
+		FROM (select * from destination 
+		left join destination_detail using(loc_id))des  
+		LEFT JOIN (SELECT LOC_ID, loc_ph_url FROM DESTINATION_PH  
+		WHERE LOC_PH_ID_CNT ='1') USING (LOC_ID)  
+		where loc_id=${loc_id}
+</select>
+
+<!-- hashmap으로 받아서 searchType (region 또는 category) 받아오기, + searchValue (해당지역)   -->
+<select id="loc_selectType" parameterType="hashmap" resultType="loc_dto">
+ 	SELECT * 
+		FROM (select * from destination 
+		left join destination_detail using(loc_id))des  
+		LEFT JOIN (SELECT LOC_ID, loc_ph_url FROM DESTINATION_PH  
+		WHERE LOC_PH_ID_CNT ='1') USING (LOC_ID)  
+		where ${searchType}=#{searchValue} 
+		order by loc_id desc
+</select>
+<!--  -->
+
+<!-- 사진 관련  -->
+<insert id="loc_insertPh" parameterType="loc_ph_bean">
+	insert into destination_ph(loc_id,loc_ph_id,loc_ph_url,loc_ph_id_cnt)
+	 values(${loc_id}, (select max(loc_ph_id)+1 from destination_ph),${loc_ph_url},${loc_ph_id_cnt})
+</insert>
+
+<select id="loc_selectPh" resultType="loc_ph_dto" parameterType="string">
+ 	select loc_id,loc_ph_id,loc_ph_url from destination_ph where loc_id = #{loc_id}  
+</select>
+
+<!-- 삭제  -->
+<delete id="loc_deletePh" parameterType="string">
+	delete from destination_ph where loc_id=#{loc_id}
+</delete>
+
+<delete id="loc_delete" parameterType="string">
+	delete from destination where loc_id=#{loc_id}	
+</delete>
+<!--  -->
+
+
+<!-- loc_update  -->
+
+<update id="loc_update" parameterType="loc_bean">
+ 	UPDATE destination SET loc_name=#{loc_name},loc_region=#{loc_region},loc_city=#{loc_city},loc_addr=#{loc_addr},loc_cat=#{loc_cat},loc_lat=#{loc_lat},loc_long=#{loc_long} WHERE loc_id=#{loc_id}
+</update>
+
+<update id="loc_updateDeatil" parameterType="loc_bean">
+ 	UPDATE destination_detail SET LOC_TEL=#{loc_tel},LOC_WORKTIME=#{loc_worktime},LOC_NONWORK=#{loc_nonwork},LOC_PARKING=#{loc_parking},loc_desc=#{loc_desc} WHERE loc_id=#{loc_id}
+</update>
+
+<!--  사진은 안필요할듯
+<update id="loc_updatePh" parameterType="mtbean">
+ 	UPDATE travel_info SET ti_trip_name=#{ti_trip_name},ti_content=#{ti_content} WHERE ti_num=#{ti_num}
+</update>
+ -->
+
+<!-- Content mapper end -->
+
+
+
+
+
+</mapper>

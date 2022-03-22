@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="pack.resource.SearchMapper">
+	<!-- criteria -->
+	<sql id="criteria">
+		<if test="keyword != null">
+			loc_addr like '%'||#{keyword}||'%' and
+		</if>
+	</sql>
+	<!-- LocSearch -->
+	<select id="TotalLocSearch" resultType="loc_dto">
+	<![CDATA[
+	select loc_id,loc_name,loc_region,loc_addr from (
+	
+		select /*+INDEX_DESC(destination sys_c0011860)*/ rownum as rn , loc_id,loc_name,loc_region,loc_addr
+		
+		from destination
+		
+		where
+	]]>
+
+	<include refid="criteria"></include>
+	
+	<![CDATA[
+		rownum <= #{pageNum} * #{amount} 
+		)
+	where rn> (#{pageNum}-1)*#{amount}
+	]]>
+	</select>
+
+	<select id="LocGetTotal" resultType="int">
+		select count(*) from destination
+		where
+		<include refid="criteria"></include>
+		loc_id > 1
+	</select>
+
+
+	<!-- 나의 여행 검색 -->
+	<select id="TotalTripSearch" resultType="mtdto">
+	<![CDATA[
+	select ti_num,user_id,ti_trip_name,ti_reg_write from (
+	
+		select /*+INDEX_DESC(travel_info pk_travel_info)*/ rownum as rn , ti_num,user_id,ti_trip_name,ti_reg_write
+		
+		from travel_info
+		
+		where rownum <= #{pageNum} * #{amount} 
+	]]>
+
+		<if test="keyword != null">
+			and ti_trip_name like '%'||#{keyword}||'%'
+		</if>
+	
+	<![CDATA[
+
+		)
+	where rn> (#{pageNum}-1)*#{amount}
+	]]>
+	</select>
+
+	<select id="TripGetTotal" resultType="int">
+		select count(*) from travel_info
+		<if test="keyword != null">
+			where ti_trip_name like '%'||#{keyword}||'%'
+		</if>
+	</select>
+	
+	<!-- 커뮤니티 검색 -->
+	<select id="TotalComuSearch" resultType="boarddto">
+	<![CDATA[
+	select tb_no,tb_cat,tb_title,tb_id from (
+	
+		select /*+INDEX_DESC(table_bd pk_table_bd)*/ rownum as rn , tb_no,tb_cat,tb_title,tb_id
+		
+		from table_bd
+		
+		where rownum <= #{pageNum} * #{amount} 
+	]]>
+
+		<if test="keyword != null">
+			and tb_title like '%'||#{keyword}||'%'
+		</if>
+	
+	<![CDATA[
+
+		)
+	where rn> (#{pageNum}-1)*#{amount}
+	]]>
+	</select>
+
+	<select id="ComuGetTotal" resultType="int">
+		select count(*) from table_bd
+		<if test="keyword != null">
+			where tb_title like '%'||#{keyword}||'%'
+		</if>
+	</select>
+</mapper>

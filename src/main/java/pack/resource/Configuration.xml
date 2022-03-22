@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+
+ <typeAliases> 
+ 	<typeAlias type="pack.model.mytrip.MyTripListDto" alias="mtdto" />
+ 	<typeAlias type="pack.model.mytrip.MyTripDetailDto" alias="mtddto" />
+ 	<typeAlias type="pack.controller.mytrip.MyTripListBean" alias="mtbean" />
+ 	<typeAlias type="pack.controller.mytrip.MyTripListDetailBean" alias="mtdbean" />
+ 	<typeAlias type="pack.controller.member.MemberBean" alias="formbean" />
+	<typeAlias type="pack.model.member.MemberDto" alias="mdto" />
+	
+	<typeAlias type="pack.controller.board.BoderBean" alias="boardformbean" />
+ 	<typeAlias type="pack.model.board.BoderDto" alias="boarddto" />
+	<typeAlias type="pack.controller.board.ReplyBean" alias="rfbean" />
+ 	<typeAlias type="pack.model.board2.ReplyDto" alias="rdto" />
+ 	 
+ 	
+ 	<!-- content alias start -->
+ 	<typeAlias type="pack.controller.content.LocationBean" alias="loc_bean" />
+ 	<typeAlias type="pack.controller.content.LocationPhBean" alias="loc_ph_bean" />
+ 	<typeAlias type="pack.model.content.LocationDto" alias="loc_dto" />
+ 	<typeAlias type="pack.model.content.LocationPhDto" alias="loc_ph_dto" />
+ 	<!-- content alias end -->
+ </typeAliases>
+
+	<mappers>
+		<mapper resource="pack/resource/DataMapper.xml" />
+		<mapper resource="pack/resource/SearchMapper.xml" />
+	</mappers>
+
+</configuration>
